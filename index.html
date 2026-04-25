@@ -3,78 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GastoPro v2.1</title>
+    <title>GastoPro Sync</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #007AFF; --bg: #F2F2F7; --card: #FFFFFF; --text: #1C1C1E; }
-        
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         
-        body { 
-            font-family: -apple-system, system-ui, BlinkMacSystemFont; 
-            background: var(--bg); 
-            margin: 0; 
-            padding: 0; 
-            color: var(--text); 
-            height: 100vh;
-            overflow: hidden; /* Prevents the whole body from bouncing */
-        }
+        body { font-family: -apple-system, system-ui, BlinkMacSystemFont; background: var(--bg); margin: 0; padding: 0; color: var(--text); height: 100vh; overflow: hidden; }
         
-        /* Layout Containers */
-        .view { 
-            display: none; 
-            height: calc(100vh - 85px); /* Subtract nav height */
-            overflow-y: auto; 
-            padding: 20px; 
-            padding-top: env(safe-area-inset-top);
-            -webkit-overflow-scrolling: touch;
-        }
+        .view { display: none; height: calc(100vh - 85px); overflow-y: auto; padding: 20px; padding-top: env(safe-area-inset-top); -webkit-overflow-scrolling: touch; }
         .view.active { display: block; }
 
         .card { background: var(--card); padding: 18px; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-bottom: 16px; }
         h2 { margin-top: 0; font-size: 1.4rem; font-weight: 700; }
         
-        /* Forms */
+        /* Fixed Alignment for All Inputs */
         label { font-size: 0.75rem; color: #8E8E93; font-weight: 600; text-transform: uppercase; display: block; margin: 10px 0 4px 4px; }
-        input, select, textarea { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #D1D1D6; font-size: 16px; background: #FFF; margin-bottom: 4px; }
+        input, select, textarea { 
+            width: 100%; padding: 12px; border-radius: 12px; border: 1px solid #D1D1D6; 
+            font-size: 16px; background: #FFF; margin-bottom: 4px; display: block;
+            height: 48px; appearance: none; -webkit-appearance: none;
+        }
         
         /* Buttons */
-        button { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 17px; font-weight: 600; cursor: pointer; }
-        .btn-save { background: var(--primary); color: white; margin-top: 15px; }
-        .btn-camera { background: #E5E5EA; color: var(--primary); margin-top: 5px; }
+        button { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 17px; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        button:active { opacity: 0.8; transform: scale(0.99); }
+        .btn-save { background: var(--primary); color: white; margin-top: 10px; margin-bottom: 20px; }
+        .btn-camera { background: #E5E5EA; color: var(--primary); margin-top: 10px; font-size: 14px; padding: 10px; }
         
-        /* CHART FIX: Fixed aspect ratio and height */
-        .chart-wrapper { 
-            position: relative; 
-            height: 300px; /* Locked height */
-            width: 100%; 
-            margin-bottom: 10px;
-        }
+        .chart-wrapper { position: relative; height: 280px; width: 100%; margin-bottom: 10px; }
 
-        /* History */
-        .history-item { background: white; padding: 14px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #E5E5EA; }
-        .history-amount { font-weight: 700; font-size: 1rem; }
-        .history-meta { font-size: 0.8rem; color: #8E8E93; }
-        .btn-delete { background: #FF3B3015; color: #FF3B30; padding: 6px 12px; font-size: 12px; border-radius: 8px; }
+        .history-item { background: white; padding: 14px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #E5E5EA; }
+        .history-flex { display: flex; justify-content: space-between; align-items: center; }
+        .history-amount { font-weight: 700; font-size: 1.1rem; }
+        .history-meta { font-size: 0.85rem; color: #8E8E93; }
 
         /* Navigation */
-        .nav-bar { 
-            position: fixed; 
-            bottom: 0; 
-            width: 100%; 
-            height: 85px;
-            background: rgba(255,255,255,0.9); 
-            backdrop-filter: blur(20px); 
-            display: flex; 
-            border-top: 0.5px solid #A7A7AA; 
-            padding-bottom: env(safe-area-inset-bottom);
-            z-index: 9999;
-        }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; height: 85px; background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); display: flex; border-top: 0.5px solid #A7A7AA; padding-bottom: env(safe-area-inset-bottom); z-index: 9999; }
         .nav-item { flex: 1; text-align: center; padding: 10px 0; color: #8E8E93; font-size: 11px; font-weight: 500; }
         .nav-item.active { color: var(--primary); }
         .nav-icon { font-size: 24px; display: block; margin-bottom: 2px; }
 
-        #status { position: fixed; top: 50px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 8px 16px; border-radius: 20px; font-size: 13px; z-index: 10000; display: none; }
+        #status { position: fixed; top: 50px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 8px 16px; border-radius: 20px; font-size: 12px; z-index: 10000; display: none; }
     </style>
 </head>
 <body>
@@ -84,8 +54,9 @@
     <div id="view-registro" class="view active">
         <h2>Nuevo Gasto</h2>
         <div class="card">
-            <label>Fecha</label><input type="date" id="dateInput">
-            <label>Monto ($)</label><input type="number" id="amount" placeholder="0.00" inputmode="decimal">
+            <label>Monto ($)</label>
+            <input type="number" id="amount" placeholder="0.00" inputmode="decimal" enterkeyhint="done">
+            
             <label>Categoría</label>
             <select id="category">
                 <option>Pelo</option><option>Comida</option><option>Regalo</option><option>Auto</option>
@@ -94,115 +65,159 @@
                 <option>Deporte</option><option>Fiesta</option><option>Taxi</option><option>Vuelo</option>
                 <option>Tintorería</option><option>Hipoteca</option><option>Compras varias</option>
             </select>
-            <label>Descripción</label><textarea id="description" rows="2"></textarea>
+
+            <button class="btn-save" id="saveBtn" onclick="saveExpense()">Guardar Gasto</button>
+            
+            <hr style="border: 0; border-top: 1px solid #EEE; margin: 10px 0;">
+
+            <label>Fecha</label>
+            <input type="date" id="dateInput">
+            
+            <label>Descripción</label>
+            <textarea id="description" rows="1" placeholder="Opcional..."></textarea>
+            
             <button class="btn-camera" onclick="document.getElementById('cameraInput').click()">📸 Escanear Recibo</button>
             <input type="file" id="cameraInput" accept="image/*" capture="camera" style="display:none" onchange="simulateOCR()">
-            <button class="btn-save" onclick="saveExpense()">Guardar Gasto</button>
         </div>
     </div>
 
     <div id="view-reportes" class="view">
-        <h2>Reportes</h2>
-        <div class="card">
-            <label>Últimos 4 Meses</label>
-            <div class="chart-wrapper">
-                <canvas id="barChart"></canvas>
-            </div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2>Reportes</h2>
+            <button onclick="fetchFromCloud()" style="width:auto; padding:6px 12px; font-size:12px; background:#E5E5EA; color:black; border-radius: 8px;">🔄 Sincronizar</button>
         </div>
-        <h2>Historial</h2>
+        <div class="card">
+            <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
+        </div>
         <div id="historyList"></div>
     </div>
 
     <nav class="nav-bar">
-        <div class="nav-item active" id="nav-reg" onclick="switchTab('registro')">
-            <span class="nav-icon">✍️</span>Registro
-        </div>
-        <div class="nav-item" id="nav-rep" onclick="switchTab('reportes')">
-            <span class="nav-icon">📊</span>Reportes
-        </div>
+        <div class="nav-item active" id="nav-reg" onclick="switchTab('registro')"><span class="nav-icon">✍️</span>Registro</div>
+        <div class="nav-item" id="nav-rep" onclick="switchTab('reportes')"><span class="nav-icon">📊</span>Reportes</div>
     </nav>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgj-q9RgL2CPQ4dAUmrke53nJ2aOjLCr3p3s5vlgiGb4_AkESwV1_FAmf_PytyOsP8/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx6T0BsCiP-RyZkrb_IrmNRY9Z1-m5_xDt4ZZNChOnw17V6EabmcbI5rLwshLlqZIJD/exec";
+        
         document.getElementById('dateInput').valueAsDate = new Date();
-        let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+        
+        // Listen for keyboard "Enter"
+        document.getElementById('amount').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); saveExpense(); }
+        });
+
+        async function saveExpense() {
+            const amtField = document.getElementById('amount');
+            const val = parseFloat(amtField.value);
+            if(!val) return;
+
+            const expense = {
+                date: document.getElementById('dateInput').value,
+                amount: val,
+                category: document.getElementById('category').value,
+                description: document.getElementById('description').value || ""
+            };
+
+            showStatus("Enviando...");
+
+            // Append locally
+            let localData = JSON.parse(localStorage.getItem('expenses')) || [];
+            localData.push(expense);
+            localStorage.setItem('expenses', JSON.stringify(localData));
+
+            // Push to Cloud
+            try {
+                await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(expense) });
+                showStatus("✅ Guardado en Nube");
+            } catch (err) {
+                showStatus("⚠️ Solo guardado local");
+            }
+            
+            amtField.value = "";
+            document.getElementById('description').value = "";
+            amtField.blur(); // Close keyboard
+        }
+
+        async function fetchFromCloud() {
+            showStatus("Obteniendo datos...");
+            try {
+                const resp = await fetch(SCRIPT_URL);
+                const data = await resp.json();
+                localStorage.setItem('expenses', JSON.stringify(data));
+                renderAll();
+                showStatus("✅ Sincronizado");
+            } catch (err) {
+                showStatus("❌ Error de red");
+            }
+        }
 
         function switchTab(t) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById('view-' + t).classList.add('active');
             document.getElementById('nav-' + t.substring(0,3)).classList.add('active');
-            if(t === 'reportes') renderAll();
+            if(t === 'reportes') fetchFromCloud();
         }
 
-        async function saveExpense() {
-            const e = {
-                date: document.getElementById('dateInput').value,
-                amount: parseFloat(document.getElementById('amount').value),
-                category: document.getElementById('category').value,
-                description: document.getElementById('description').value || ""
-            };
-            if(!e.amount) return;
-            expenses.push(e);
-            localStorage.setItem('expenses', JSON.stringify(expenses));
-            fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(e) });
-            document.getElementById('amount').value = "";
-            document.getElementById('description').value = "";
-            alert("Guardado");
+        function showStatus(m) {
+            const s = document.getElementById('status');
+            s.innerText = m; s.style.display = 'block';
+            setTimeout(() => s.style.display = 'none', 2500);
         }
 
         function renderAll() {
+            const data = JSON.parse(localStorage.getItem('expenses')) || [];
             const list = document.getElementById('historyList');
-            list.innerHTML = expenses.slice().reverse().map((e, i) => `
+            list.innerHTML = data.slice().reverse().map(e => `
                 <div class="history-item">
-                    <div>
-                        <div class="history-amount">$${e.amount.toFixed(2)}</div>
-                        <div class="history-meta">${e.category} • ${e.date}</div>
+                    <div class="history-flex">
+                        <span class="history-amount">$${Number(e.amount).toFixed(2)}</span>
+                        <span class="history-meta" style="color:var(--primary); font-weight:600">${e.category}</span>
                     </div>
-                    <button class="btn-delete" onclick="deleteExpense(${expenses.length - 1 - i})">Borrar</button>
+                    <div class="history-meta">${new Date(e.date).toLocaleDateString()} ${e.description ? '• ' + e.description : ''}</div>
                 </div>
             `).join('');
-            renderChart();
+            renderChart(data);
         }
 
-        function renderChart() {
+        function renderChart(data) {
             const ctx = document.getElementById('barChart').getContext('2d');
             const months = [];
             for (let i = 3; i >= 0; i--) {
                 const d = new Date(); d.setMonth(d.getMonth() - i);
                 months.push(d.toISOString().substring(0, 7));
             }
-            const cats = [...new Set(expenses.map(e => e.category))];
-            const colors = ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#5856D6', '#FFCC00'];
+            const cats = [...new Set(data.map(e => e.category))];
+            const colors = ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#5856D6', '#FFCC00', '#8E8E93'];
 
             const ds = cats.map((c, idx) => ({
                 label: c,
-                data: months.map(m => expenses.filter(e => e.date.startsWith(m) && e.category === c).reduce((s, e) => s + e.amount, 0)),
+                data: months.map(m => data.filter(e => String(e.date).startsWith(m) && e.category === c).reduce((s, e) => s + Number(e.amount), 0)),
                 backgroundColor: colors[idx % colors.length]
             }));
 
             if(window.myChart) window.myChart.destroy();
             window.myChart = new Chart(ctx, {
                 type: 'bar',
-                data: { labels: months.map(m => m.split('-')[1]), datasets: ds },
+                data: { labels: months.map(m => m.split('-')[1] + '/' + m.split('-')[0].substring(2)), datasets: ds },
                 options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { x: { stacked: true, grid: {display:false} }, y: { stacked: true, beginAtZero: true } },
                     plugins: { legend: { display: false } }
                 }
             });
         }
 
-        function deleteExpense(i) {
-            expenses.splice(i, 1);
-            localStorage.setItem('expenses', JSON.stringify(expenses));
-            renderAll();
+        function simulateOCR() {
+            showStatus("Escaneando...");
+            setTimeout(() => {
+                document.getElementById('amount').value = (Math.random()*150 + 20).toFixed(2);
+                showStatus("Monto detectado");
+            }, 1000);
         }
         
-        function simulateOCR() {
-            document.getElementById('amount').value = (Math.random()*100).toFixed(2);
-        }
+        renderAll();
     </script>
 </body>
 </html>
