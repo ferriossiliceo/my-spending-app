@@ -3,81 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GastoPro MVP</title>
+    <title>GastoPro v2</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #007AFF; --bg: #F2F2F7; --card: #FFFFFF; }
-        body { font-family: -apple-system, system-ui, BlinkMacSystemFont; background: var(--bg); margin: 0; padding: 15px; padding-bottom: 50px; color: #000; }
-        .card { background: var(--card); padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 15px; }
-        h2 { margin-top: 0; font-size: 1.1rem; color: #333; }
-        label { font-size: 0.8rem; color: #666; font-weight: 600; text-transform: uppercase; }
+        :root { --primary: #007AFF; --bg: #F2F2F7; --card: #FFFFFF; --text: #1C1C1E; }
+        body { font-family: -apple-system, system-ui, BlinkMacSystemFont; background: var(--bg); margin: 0; padding: 0; color: var(--text); overflow-x: hidden; }
         
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0 16px 0; border-radius: 10px; border: 1px solid #DDD; box-sizing: border-box; font-size: 16px; -webkit-appearance: none; }
+        /* Container and Tabs */
+        .view { display: none; padding: 20px; padding-bottom: 100px; animation: fadeIn 0.3s; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Card Styling */
+        .card { background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2 { margin-top: 0; font-size: 1.4rem; font-weight: 700; letter-spacing: -0.5px; }
         
-        button { width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
-        button:active { opacity: 0.7; }
+        /* Form Elements */
+        label { font-size: 0.75rem; color: #8E8E93; font-weight: 600; text-transform: uppercase; margin-left: 4px; }
+        input, select, textarea { width: 100%; padding: 14px; margin: 8px 0 18px 0; border-radius: 12px; border: 1px solid #D1D1D6; box-sizing: border-box; font-size: 16px; background: #FFF; -webkit-appearance: none; }
         
-        .btn-save { background: #34C759; color: white; margin-top: 10px; }
-        .btn-camera { background: #E5E5EA; color: #007AFF; margin-bottom: 5px; }
-        .btn-delete { background: #FF3B30; color: white; width: auto; padding: 6px 12px; font-size: 13px; }
+        /* Buttons */
+        button { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 17px; font-weight: 600; cursor: pointer; transition: transform 0.1s; }
+        button:active { transform: scale(0.98); opacity: 0.9; }
+        .btn-save { background: var(--primary); color: white; margin-top: 10px; }
+        .btn-camera { background: #E5E5EA; color: var(--primary); margin-bottom: 5px; }
         
-        .history-item { border-bottom: 1px solid #EEE; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
-        .history-info { line-height: 1.4; }
-        .history-amount { font-weight: 700; color: #000; }
-        .history-meta { font-size: 0.8rem; color: #8E8E93; }
-        
-        #status { text-align: center; font-size: 0.8rem; color: #8E8E93; margin-top: -10px; margin-bottom: 10px; height: 15px; }
+        /* Chart Container - FIXED HEIGHT */
+        .chart-container { position: relative; height: 350px; width: 100%; }
+
+        /* History List */
+        .history-item { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #E5E5EA; }
+        .history-amount { font-weight: 700; font-size: 1.1rem; }
+        .history-meta { font-size: 0.85rem; color: #8E8E93; }
+        .btn-delete { background: #FF3B3015; color: #FF3B30; width: auto; padding: 8px 12px; font-size: 13px; border-radius: 8px; }
+
+        /* Bottom Navigation */
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: rgba(255,255,255,0.8); backdrop-filter: blur(15px); display: flex; border-top: 0.5px solid #C6C6C8; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { flex: 1; text-align: center; padding: 12px 0; color: #8E8E93; font-size: 10px; font-weight: 500; text-decoration: none; cursor: pointer; }
+        .nav-item.active { color: var(--primary); }
+        .nav-icon { font-size: 24px; display: block; margin-bottom: 2px; }
+
+        #status { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 20px; font-size: 14px; z-index: 1000; display: none; }
     </style>
 </head>
 <body>
 
-    <div class="card">
+    <div id="status"></div>
+
+    <div id="view-registro" class="view active">
         <h2>Nuevo Gasto</h2>
-        <div id="status"></div>
-        
-        <label>Fecha</label>
-        <input type="date" id="dateInput">
-        
-        <label>Monto ($)</label>
-        <input type="number" id="amount" placeholder="0.00" inputmode="decimal">
-        
-        <label>Categoría</label>
-        <select id="category">
-            <option>Pelo</option><option>Comida</option><option>Regalo</option><option>Auto</option>
-            <option>Ropa</option><option>Super</option><option>Entretenimiento</option><option>Salud</option>
-            <option>Depa</option><option>Gasolina</option><option>Tienda de conveniencia</option><option>Viajes</option>
-            <option>Deporte</option><option>Fiesta</option><option>Taxi</option><option>Vuelo</option>
-            <option>Tintorería</option><option>Hipoteca</option><option>Compras varias</option>
-        </select>
-        
-        <label>Descripción</label>
-        <textarea id="description" placeholder="Notas adicionales..." rows="2"></textarea>
-        
-        <button class="btn-camera" onclick="document.getElementById('cameraInput').click()">📸 Escanear Recibo</button>
-        <input type="file" id="cameraInput" accept="image/*" capture="camera" style="display:none" onchange="simulateOCR(this)">
-        
-        <button class="btn-save" onclick="saveExpense()">Guardar en la Nube</button>
+        <div class="card">
+            <label>Fecha</label>
+            <input type="date" id="dateInput">
+            
+            <label>Monto ($)</label>
+            <input type="number" id="amount" placeholder="0.00" inputmode="decimal">
+            
+            <label>Categoría</label>
+            <select id="category">
+                <option>Pelo</option><option>Comida</option><option>Regalo</option><option>Auto</option>
+                <option>Ropa</option><option>Super</option><option>Entretenimiento</option><option>Salud</option>
+                <option>Depa</option><option>Gasolina</option><option>Tienda de conveniencia</option><option>Viajes</option>
+                <option>Deporte</option><option>Fiesta</option><option>Taxi</option><option>Vuelo</option>
+                <option>Tintorería</option><option>Hipoteca</option><option>Compras varias</option>
+            </select>
+            
+            <label>Descripción</label>
+            <textarea id="description" placeholder="¿En qué gastaste?" rows="2"></textarea>
+            
+            <button class="btn-camera" onclick="document.getElementById('cameraInput').click()">📸 Escanear Recibo</button>
+            <input type="file" id="cameraInput" accept="image/*" capture="camera" style="display:none" onchange="simulateOCR(this)">
+            
+            <button class="btn-save" onclick="saveExpense()">Guardar Gasto</button>
+        </div>
     </div>
 
-    <div class="card">
-        <h2>Análisis (4 Meses)</h2>
-        <canvas id="barChart"></canvas>
-    </div>
+    <div id="view-reportes" class="view">
+        <h2>Reportes</h2>
+        <div class="card">
+            <label>Últimos 4 Meses</label>
+            <div class="chart-container">
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
 
-    <div class="card">
         <h2>Historial Reciente</h2>
         <div id="historyList"></div>
     </div>
 
+    <nav class="nav-bar">
+        <div class="nav-item active" id="nav-reg" onclick="switchTab('registro')">
+            <span class="nav-icon">✍️</span>Registro
+        </div>
+        <div class="nav-item" id="nav-rep" onclick="switchTab('reportes')">
+            <span class="nav-icon">📊</span>Reportes
+        </div>
+    </nav>
+
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgj-q9RgL2CPQ4dAUmrke53nJ2aOjLCr3p3s5vlgiGb4_AkESwV1_FAmf_PytyOsP8/exec";
         
-        // Configuración inicial
         document.getElementById('dateInput').valueAsDate = new Date();
         let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
 
+        function switchTab(tabName) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById('view-' + tabName).classList.add('active');
+            if(tabName === 'registro') document.getElementById('nav-reg').classList.add('active');
+            if(tabName === 'reportes') {
+                document.getElementById('nav-rep').classList.add('active');
+                renderAll(); // Refresh charts when switching
+            }
+        }
+
+        function showStatus(msg) {
+            const s = document.getElementById('status');
+            s.innerText = msg;
+            s.style.display = 'block';
+            setTimeout(() => s.style.display = 'none', 3000);
+        }
+
         async function saveExpense() {
-            const statusDiv = document.getElementById('status');
             const expense = {
                 date: document.getElementById('dateInput').value,
                 amount: parseFloat(document.getElementById('amount').value),
@@ -85,35 +133,26 @@
                 description: document.getElementById('description').value || ""
             };
             
-            if(!expense.amount) return alert("Por favor ingresa un monto.");
+            if(!expense.amount) return alert("Ingresa un monto válido");
 
-            statusDiv.innerText = "Sincronizando con Google Sheets...";
-
-            // Guardar localmente
+            showStatus("Sincronizando...");
             expenses.push(expense);
             localStorage.setItem('expenses', JSON.stringify(expenses));
 
-            // Enviar a Google (Cloud)
             try {
-                await fetch(SCRIPT_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    body: JSON.stringify(expense)
-                });
-                statusDiv.innerText = "✅ Guardado exitosamente";
-                setTimeout(() => statusDiv.innerText = "", 3000);
+                await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(expense) });
+                showStatus("✅ ¡Guardado!");
             } catch (e) {
-                statusDiv.innerText = "⚠️ Error de conexión, guardado localmente";
+                showStatus("⚠️ Guardado localmente");
             }
 
-            renderAll();
-            // Reset fields
             document.getElementById('amount').value = "";
             document.getElementById('description').value = "";
+            renderAll();
         }
 
         function deleteExpense(index) {
-            if(confirm("¿Borrar este registro local?")) {
+            if(confirm("¿Eliminar este registro?")) {
                 expenses.splice(index, 1);
                 localStorage.setItem('expenses', JSON.stringify(expenses));
                 renderAll();
@@ -121,20 +160,21 @@
         }
 
         function simulateOCR(input) {
-            document.getElementById('status').innerText = "Analizando recibo...";
+            showStatus("Analizando recibo...");
             setTimeout(() => {
-                document.getElementById('amount').value = (Math.random() * 500).toFixed(2);
-                document.getElementById('status').innerText = "Monto detectado (Simulado)";
-            }, 1500);
+                document.getElementById('amount').value = (Math.random() * 400 + 50).toFixed(2);
+                showStatus("Monto sugerido cargado");
+            }, 1200);
         }
 
         function renderAll() {
             const list = document.getElementById('historyList');
-            list.innerHTML = expenses.slice(-10).reverse().map((e, i) => `
+            list.innerHTML = expenses.slice(-15).reverse().map((e, i) => `
                 <div class="history-item">
                     <div class="history-info">
-                        <span class="history-amount">$${e.amount.toFixed(2)}</span> — ${e.category}<br>
-                        <span class="history-meta">${e.date} ${e.description ? '• ' + e.description : ''}</span>
+                        <div class="history-amount">$${e.amount.toFixed(2)}</div>
+                        <div class="history-meta">${e.category} • ${e.date}</div>
+                        <div class="history-meta" style="color:#555">${e.description}</div>
                     </div>
                     <button class="btn-delete" onclick="deleteExpense(${expenses.length - 1 - i})">Borrar</button>
                 </div>
@@ -144,34 +184,37 @@
         }
 
         function renderChart() {
-            const ctx = document.getElementById('barChart').getContext('2d');
-            const last4Months = [];
+            const canvas = document.getElementById('barChart');
+            const ctx = canvas.getContext('2d');
+            
+            const months = [];
             for (let i = 3; i >= 0; i--) {
                 const d = new Date();
                 d.setMonth(d.getMonth() - i);
-                last4Months.push(d.toISOString().substring(0, 7));
+                months.push(d.toISOString().substring(0, 7));
             }
 
             const uniqueCats = [...new Set(expenses.map(e => e.category))];
-            const colors = ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#5856D6', '#FFCC00', '#8E8E93'];
+            const colors = ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#5856D6', '#FFCC00', '#8E8E93', '#00C7BE', '#FF2D55'];
 
             const datasets = uniqueCats.map((cat, idx) => ({
                 label: cat,
-                data: last4Months.map(m => 
-                    expenses.filter(e => e.date.startsWith(m) && e.category === cat)
-                            .reduce((sum, e) => sum + e.amount, 0)
-                ),
-                backgroundColor: colors[idx % colors.length]
+                data: months.map(m => expenses.filter(e => e.date.startsWith(m) && e.category === cat).reduce((s, e) => s + e.amount, 0)),
+                backgroundColor: colors[idx % colors.length],
+                borderRadius: 4
             }));
 
             if(window.myChart) window.myChart.destroy();
             window.myChart = new Chart(ctx, {
                 type: 'bar',
-                data: { labels: last4Months.map(m => m.split('-').reverse().join('/')), datasets: datasets },
+                data: { labels: months.map(m => m.split('-').reverse().join('/')), datasets: datasets },
                 options: { 
                     responsive: true, 
                     maintainAspectRatio: false,
-                    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
+                    scales: { 
+                        x: { stacked: true, grid: { display: false } }, 
+                        y: { stacked: true, beginAtZero: true, grid: { color: '#E5E5EA' } } 
+                    },
                     plugins: { legend: { display: false } } 
                 }
             });
