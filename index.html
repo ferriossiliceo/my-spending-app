@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GastoPro Final Sync</title>
+    <title>GastoPro Blue v4</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --primary: #007AFF; --bg: #F2F2F7; --card: #FFFFFF; --text: #1C1C1E; --success: #34C759; }
@@ -24,7 +24,6 @@
             height: 48px; appearance: none; -webkit-appearance: none;
         }
 
-        /* Floating WhatsApp-style Submit area */
         .send-container { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
         .btn-send-icon { 
             background: var(--success); color: white; width: 50px; height: 48px; 
@@ -33,7 +32,10 @@
         }
         
         button { width: 100%; padding: 16px; border-radius: 12px; border: none; font-size: 17px; font-weight: 600; cursor: pointer; }
-        .btn-camera { background: #E5E5EA; color: var(--primary); margin-top: 10px; font-size: 14px; padding: 10px; }
+        
+        /* THE BLUE BUTTON (If gray, the app hasn't updated!) */
+        .btn-camera { background: var(--primary) !important; color: white !important; margin-top: 10px; font-size: 14px; padding: 10px; }
+        
         .btn-delete { background: #FF3B3015; color: #FF3B30; width: auto; padding: 6px 12px; font-size: 12px; border-radius: 8px; font-weight: 600; border: none; }
         
         .chart-wrapper { position: relative; height: 280px; width: 100%; }
@@ -101,6 +103,7 @@
     </nav>
 
     <script>
+        // Updated URL and added ?v=1 to force cache refresh
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaatOmgdIHuqHHFLpmP-jSEucg9E12cQUuNd5gQ-AkVgcVG13sza5R0ba1tnPEIV-z/exec";
         
         document.getElementById('dateInput').valueAsDate = new Date();
@@ -122,27 +125,21 @@
             };
 
             showStatus("Guardando...");
-            let localData = JSON.parse(localStorage.getItem('expenses')) || [];
-            localData.push(expense);
-            localStorage.setItem('expenses', JSON.stringify(localData));
-
             try {
                 await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(expense) });
+                amtField.value = "";
+                document.getElementById('description').value = "";
+                amtField.blur(); 
                 showStatus("✅ Guardado");
             } catch (err) {
-                showStatus("⚠️ Guardado local");
+                showStatus("❌ Error de red");
             }
-            
-            amtField.value = "";
-            document.getElementById('description').value = "";
-            amtField.blur(); 
-            renderAll();
         }
 
         async function fetchFromCloud() {
             showStatus("Sincronizando...");
             try {
-                const resp = await fetch(SCRIPT_URL);
+                const resp = await fetch(SCRIPT_URL + "?v=" + new Date().getTime());
                 const data = await resp.json();
                 localStorage.setItem('expenses', JSON.stringify(data));
                 renderAll();
@@ -156,14 +153,9 @@
             if(!confirm("¿Borrar permanentemente?")) return;
             showStatus("Borrando...");
 
-            // Normalize date to YYYY-MM-DD for matching
-            let dateStr = "";
-            try {
-                let d = new Date(item.date);
-                dateStr = d.toISOString().split('T')[0];
-            } catch(e) {
-                dateStr = item.date;
-            }
+            let d = new Date(item.date);
+            // We force yyyy-mm-dd format strictly
+            let dateStr = d.toISOString().split('T')[0];
 
             const payload = { 
                 action: "delete", 
@@ -178,10 +170,10 @@
                     mode: "no-cors", 
                     body: JSON.stringify(payload) 
                 });
-                // Wait slightly for Google to finish, then sync
-                setTimeout(fetchFromCloud, 1500); 
+                // Wait slightly for Google, then sync
+                setTimeout(fetchFromCloud, 2000); 
             } catch (err) {
-                showStatus("❌ Error al borrar");
+                showStatus("❌ Error de red");
             }
         }
 
@@ -196,7 +188,7 @@
         function showStatus(m) {
             const s = document.getElementById('status');
             s.innerText = m; s.style.display = 'block';
-            setTimeout(() => s.style.display = 'none', 2000);
+            setTimeout(() => s.style.display = 'none', 3000);
         }
 
         function renderAll() {
