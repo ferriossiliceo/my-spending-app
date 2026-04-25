@@ -1,83 +1,183 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SpendTrack</title>
+    <title>GastoPro MVP</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --primary: #007AFF; --bg: #F2F2F7; }
-        body { font-family: -apple-system, system-ui; background: var(--bg); margin: 0; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        input, select, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
-        .receipt-preview { width: 100%; height: 150px; object-fit: cover; border-radius: 8px; display: none; margin-top: 10px; }
-        h2 { margin-top: 0; font-size: 1.2rem; }
+        :root { --primary: #007AFF; --bg: #F2F2F7; --card: #FFFFFF; }
+        body { font-family: -apple-system, system-ui, BlinkMacSystemFont; background: var(--bg); margin: 0; padding: 15px; padding-bottom: 50px; color: #000; }
+        .card { background: var(--card); padding: 20px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); margin-bottom: 15px; }
+        h2 { margin-top: 0; font-size: 1.1rem; color: #333; }
+        label { font-size: 0.8rem; color: #666; font-weight: 600; text-transform: uppercase; }
+        
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0 16px 0; border-radius: 10px; border: 1px solid #DDD; box-sizing: border-box; font-size: 16px; -webkit-appearance: none; }
+        
+        button { width: 100%; padding: 14px; border-radius: 10px; border: none; font-size: 16px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
+        button:active { opacity: 0.7; }
+        
+        .btn-save { background: #34C759; color: white; margin-top: 10px; }
+        .btn-camera { background: #E5E5EA; color: #007AFF; margin-bottom: 5px; }
+        .btn-delete { background: #FF3B30; color: white; width: auto; padding: 6px 12px; font-size: 13px; }
+        
+        .history-item { border-bottom: 1px solid #EEE; padding: 12px 0; display: flex; justify-content: space-between; align-items: center; }
+        .history-info { line-height: 1.4; }
+        .history-amount { font-weight: 700; color: #000; }
+        .history-meta { font-size: 0.8rem; color: #8E8E93; }
+        
+        #status { text-align: center; font-size: 0.8rem; color: #8E8E93; margin-top: -10px; margin-bottom: 10px; height: 15px; }
     </style>
 </head>
 <body>
 
     <div class="card">
-        <h2>Add Expense</h2>
-        <input type="number" id="amount" placeholder="Amount ($)" inputmode="decimal">
+        <h2>Nuevo Gasto</h2>
+        <div id="status"></div>
+        
+        <label>Fecha</label>
+        <input type="date" id="dateInput">
+        
+        <label>Monto ($)</label>
+        <input type="number" id="amount" placeholder="0.00" inputmode="decimal">
+        
+        <label>Categoría</label>
         <select id="category">
-            <option value="Food">🍔 Food</option>
-            <option value="Transport">🚗 Transport</option>
-            <option value="Discretionary">🎮 Discretionary</option>
-            <option value="Bills">📑 Bills</option>
+            <option>Pelo</option><option>Comida</option><option>Regalo</option><option>Auto</option>
+            <option>Ropa</option><option>Super</option><option>Entretenimiento</option><option>Salud</option>
+            <option>Depa</option><option>Gasolina</option><option>Tienda de conveniencia</option><option>Viajes</option>
+            <option>Deporte</option><option>Fiesta</option><option>Taxi</option><option>Vuelo</option>
+            <option>Tintorería</option><option>Hipoteca</option><option>Compras varias</option>
         </select>
-        <button onclick="document.getElementById('cameraInput').click()">📸 Take Receipt Photo</button>
-        <input type="file" id="cameraInput" accept="image/*" capture="camera" style="display:none" onchange="previewImage(this)">
-        <img id="preview" class="receipt-preview">
-        <button style="background: #34C759;" onclick="saveExpense()">Save Transaction</button>
+        
+        <label>Descripción</label>
+        <textarea id="description" placeholder="Notas adicionales..." rows="2"></textarea>
+        
+        <button class="btn-camera" onclick="document.getElementById('cameraInput').click()">📸 Escanear Recibo</button>
+        <input type="file" id="cameraInput" accept="image/*" capture="camera" style="display:none" onchange="simulateOCR(this)">
+        
+        <button class="btn-save" onclick="saveExpense()">Guardar en la Nube</button>
     </div>
 
     <div class="card">
-        <h2>Monthly Breakdown</h2>
-        <canvas id="spendChart"></canvas>
+        <h2>Análisis (4 Meses)</h2>
+        <canvas id="barChart"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>Historial Reciente</h2>
+        <div id="historyList"></div>
     </div>
 
     <script>
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxgj-q9RgL2CPQ4dAUmrke53nJ2aOjLCr3p3s5vlgiGb4_AkESwV1_FAmf_PytyOsP8/exec";
+        
+        // Configuración inicial
+        document.getElementById('dateInput').valueAsDate = new Date();
         let expenses = JSON.parse(localStorage.getItem('expenses')) || [];
-        let receiptBase64 = null;
 
-        function previewImage(input) {
-            const reader = new FileReader();
-            reader.onload = e => {
-                document.getElementById('preview').src = e.target.result;
-                document.getElementById('preview').style.display = 'block';
-                receiptBase64 = e.target.result;
-            };
-            reader.readAsDataURL(input.files[0]);
-        }
-
-        function saveExpense() {
+        async function saveExpense() {
+            const statusDiv = document.getElementById('status');
             const expense = {
+                date: document.getElementById('dateInput').value,
                 amount: parseFloat(document.getElementById('amount').value),
                 category: document.getElementById('category').value,
-                date: new Date().toISOString(),
-                receipt: receiptBase64
+                description: document.getElementById('description').value || ""
             };
-            if(!expense.amount) return alert("Enter an amount");
+            
+            if(!expense.amount) return alert("Por favor ingresa un monto.");
+
+            statusDiv.innerText = "Sincronizando con Google Sheets...";
+
+            // Guardar localmente
             expenses.push(expense);
             localStorage.setItem('expenses', JSON.stringify(expenses));
-            location.reload(); // Refresh to update chart
+
+            // Enviar a Google (Cloud)
+            try {
+                await fetch(SCRIPT_URL, {
+                    method: "POST",
+                    mode: "no-cors",
+                    body: JSON.stringify(expense)
+                });
+                statusDiv.innerText = "✅ Guardado exitosamente";
+                setTimeout(() => statusDiv.innerText = "", 3000);
+            } catch (e) {
+                statusDiv.innerText = "⚠️ Error de conexión, guardado localmente";
+            }
+
+            renderAll();
+            // Reset fields
+            document.getElementById('amount').value = "";
+            document.getElementById('description').value = "";
         }
 
-        // Simple Chart implementation
-        const ctx = document.getElementById('spendChart').getContext('2d');
-        const totals = expenses.reduce((acc, curr) => {
-            acc[curr.category] = (acc[curr.category] || 0) + curr.amount;
-            return acc;
-        }, {});
-
-        new Chart(ctx, {
-            type: 'doughnut',
-            data: {
-                labels: Object.keys(totals),
-                datasets: [{ data: Object.values(totals), backgroundColor: ['#FF3B30', '#FF9500', '#007AFF', '#5856D6'] }]
+        function deleteExpense(index) {
+            if(confirm("¿Borrar este registro local?")) {
+                expenses.splice(index, 1);
+                localStorage.setItem('expenses', JSON.stringify(expenses));
+                renderAll();
             }
-        });
+        }
+
+        function simulateOCR(input) {
+            document.getElementById('status').innerText = "Analizando recibo...";
+            setTimeout(() => {
+                document.getElementById('amount').value = (Math.random() * 500).toFixed(2);
+                document.getElementById('status').innerText = "Monto detectado (Simulado)";
+            }, 1500);
+        }
+
+        function renderAll() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = expenses.slice(-10).reverse().map((e, i) => `
+                <div class="history-item">
+                    <div class="history-info">
+                        <span class="history-amount">$${e.amount.toFixed(2)}</span> — ${e.category}<br>
+                        <span class="history-meta">${e.date} ${e.description ? '• ' + e.description : ''}</span>
+                    </div>
+                    <button class="btn-delete" onclick="deleteExpense(${expenses.length - 1 - i})">Borrar</button>
+                </div>
+            `).join('');
+
+            renderChart();
+        }
+
+        function renderChart() {
+            const ctx = document.getElementById('barChart').getContext('2d');
+            const last4Months = [];
+            for (let i = 3; i >= 0; i--) {
+                const d = new Date();
+                d.setMonth(d.getMonth() - i);
+                last4Months.push(d.toISOString().substring(0, 7));
+            }
+
+            const uniqueCats = [...new Set(expenses.map(e => e.category))];
+            const colors = ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#5856D6', '#FFCC00', '#8E8E93'];
+
+            const datasets = uniqueCats.map((cat, idx) => ({
+                label: cat,
+                data: last4Months.map(m => 
+                    expenses.filter(e => e.date.startsWith(m) && e.category === cat)
+                            .reduce((sum, e) => sum + e.amount, 0)
+                ),
+                backgroundColor: colors[idx % colors.length]
+            }));
+
+            if(window.myChart) window.myChart.destroy();
+            window.myChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: last4Months.map(m => m.split('-').reverse().join('/')), datasets: datasets },
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false,
+                    scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } },
+                    plugins: { legend: { display: false } } 
+                }
+            });
+        }
+
+        renderAll();
     </script>
 </body>
 </html>
