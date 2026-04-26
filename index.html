@@ -10,7 +10,7 @@
             --primary: #007AFF; 
             --bg-gradient: linear-gradient(180deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
             --card: rgba(255, 255, 255, 0.1); 
-            --frost-white: rgba(252, 252, 252, 0.88);
+            --frost-white: rgba(252, 252, 252, 0.88); 
             --text-dark: #1c1c1e;
             --text-light: #FFFFFF; 
             --success: #34C759; 
@@ -91,6 +91,35 @@
         button { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 17px; font-weight: 600; cursor: pointer; }
         
         .btn-camera { background: var(--deep-blue) !important; color: white !important; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .btn-sheet { background: #1D6F42; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+        .btn-delete { 
+            background: var(--warning-yellow); 
+            color: #000; 
+            width: auto; 
+            padding: 6px 14px; 
+            font-size: 11px; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            text-transform: uppercase;
+        }
+
+        .chart-wrapper { position: relative; height: 260px; width: 100%; }
+
+        .history-item { 
+            background: rgba(255, 255, 255, 0.7); 
+            padding: 16px; 
+            border-radius: 16px; 
+            margin-bottom: 12px; 
+            border: 1px solid rgba(255, 255, 255, 0.3); 
+            color: var(--text-dark);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .history-flex { display: flex; justify-content: space-between; align-items: center; }
+        .history-amount { font-weight: 800; font-size: 1.2rem; color: var(--text-dark); }
+        .history-meta-cat { font-size: 0.85rem; color: var(--primary); font-weight: 700; }
+        .history-meta-date { font-size: 0.8rem; color: #3a3a3c; font-weight: 500; }
 
         .nav-bar { 
             position: fixed; bottom: 0; width: 100%; height: 85px; 
@@ -115,11 +144,11 @@
         .bottom-ui { display: flex; flex-direction: column-reverse; }
     </style>
 </head>
-<body onload="initApp()">
+<body>
     <div id="status"></div>
 
     <div id="view-registro" class="view active">
-        <div style="height: 10vh;"></div> 
+        <div style="height: 15vh;"></div> 
         <h2>Nuevo Gasto</h2>
         <div class="card bottom-ui">
             <div>
@@ -135,27 +164,12 @@
 
                 <label>Categoría</label>
                 <select id="category">
-                    <option>Comida</option>
-                    <option>Super</option>
-                    <option>Gasolina</option>
-                    <option>Hipoteca</option>
-                    <option>Gym</option>
-                    <option>Entretenimiento</option>
-                    <option>Tienda de conveniencia</option>
-                    <option>Depa</option>
-                    <option>Compras varias</option>
-                    <option>Salud</option>
-                    <option>Nu</option>
-                    <option>Fiderh</option>
-                    <option>Deporte</option>
-                    <option>Taxi</option>
-                    <option>Vuelo</option>
-                    <option>Viajes</option>
-                    <option>Pelo</option>
-                    <option>Ropa</option>
-                    <option>Auto</option>
-                    <option>Regalo</option>
-                    <option>Tintorería</option>
+                    <option>Comida</option><option>Super</option><option>Gasolina</option><option>Hipoteca</option>
+                    <option>Gym</option><option>Entretenimiento</option><option>Tienda de conveniencia</option>
+                    <option>Depa</option><option>Compras varias</option><option>Salud</option><option>Nu</option>
+                    <option>Fiderh</option><option>Deporte</option><option>Taxi</option><option>Vuelo</option>
+                    <option>Viajes</option><option>Pelo</option><option>Ropa</option><option>Auto</option>
+                    <option>Regalo</option><option>Tintorería</option>
                 </select>
 
                 <label>Monto ($)</label>
@@ -167,62 +181,157 @@
         </div>
     </div>
 
-    <!-- Rest of the views would go here (Reportes, etc) -->
+    <div id="view-reportes" class="view">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+            <h2>Reportes</h2>
+            <button onclick="fetchFromCloud()" style="width:auto; padding:8px 16px; font-size:12px; background:rgba(255,255,255,0.2); color:white; border-radius: 10px;">🔄 Sync</button>
+        </div>
+        <div class="card card-white">
+            <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
+        </div>
+        <div id="historyList"></div>
+    </div>
+
+    <div id="view-settings" class="view">
+        <h2>Planilla</h2>
+        <div class="card card-white">
+            <p style="font-size: 0.9rem; color: var(--text-dark); margin-bottom: 20px;">Accede a tu base de datos completa en Google Sheets.</p>
+            <button class="btn-sheet" onclick="openSheet()">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/Google_Sheets_logo_%282014-2020%29.svg" width="20">
+                Abrir Google Sheet
+            </button>
+        </div>
+    </div>
 
     <nav class="nav-bar">
-        <div class="nav-item active" onclick="switchView('registro')">
-            <span class="nav-icon">💸</span>Registro
-        </div>
-        <div class="nav-item" onclick="switchView('reportes')">
-            <span class="nav-icon">📊</span>Reportes
-        </div>
+        <div class="nav-item active" id="nav-reg" onclick="switchTab('registro')"><span class="nav-icon">✍️</span>Registro</div>
+        <div class="nav-item" id="nav-rep" onclick="switchTab('reportes')"><span class="nav-icon">📊</span>Reportes</div>
+        <div class="nav-item" id="nav-set" onclick="switchTab('settings')"><span class="nav-icon">📂</span>Planilla</div>
     </nav>
 
     <script>
-        function initApp() {
-            // Set default date to today
-            document.getElementById('dateInput').valueAsDate = new Date();
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaatOmgdIHuqHHFLpmP-jSEucg9E12cQUuNd5gQ-AkVgcVG13sza5R0ba1tnPEIV-z/exec";
+        const SHEET_URL = "https://docs.google.com/spreadsheets/d/13XlSnPREi4eD_064opOUaPCjXn1b-vRn9CmNaBXztlA/edit?usp=sharing";
+        
+        document.getElementById('dateInput').valueAsDate = new Date();
+        function openSheet() { window.open(SHEET_URL, '_blank'); }
+
+        async function saveExpense() {
+            const amtField = document.getElementById('amount');
+            const val = parseFloat(amtField.value);
+            if(!val) return;
+            const expense = {
+                date: document.getElementById('dateInput').value,
+                amount: val,
+                category: document.getElementById('category').value,
+                description: document.getElementById('description').value || ""
+            };
+            showStatus("Guardando...");
+            try {
+                await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(expense) });
+                amtField.value = "";
+                document.getElementById('description').value = "";
+                showStatus("✅ Guardado");
+                setTimeout(() => switchTab('reportes'), 500);
+            } catch (err) { showStatus("❌ Error"); }
         }
 
-        function switchView(viewId) {
+        async function fetchFromCloud() {
+            showStatus("Sincronizando...");
+            try {
+                const resp = await fetch(SCRIPT_URL + "?nocache=" + new Date().getTime());
+                const data = await resp.json();
+                localStorage.setItem('expenses', JSON.stringify(data));
+                renderAll();
+                showStatus("✅ Sincronizado");
+            } catch (err) { showStatus("❌ Error"); }
+        }
+
+        async function deleteFromCloud(item) {
+            if(!confirm("¿Borrar registro?")) return;
+            showStatus("Borrando...");
+            const payload = { action: "delete", rowId: item.rowId };
+            try {
+                await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+                setTimeout(fetchFromCloud, 2000); 
+            } catch (err) { showStatus("❌ Error"); }
+        }
+
+        function renderAll() {
+            const raw = localStorage.getItem('expenses') || "[]";
+            const data = JSON.parse(raw);
+            const list = document.getElementById('historyList');
+            
+            list.innerHTML = data.slice().reverse().map((e) => {
+                const cleanDate = String(e.date).split('T')[0];
+                return `
+                <div class="history-item">
+                    <div class="history-flex">
+                        <div>
+                            <span class="history-amount">$${Number(e.amount).toFixed(2)}</span>
+                            <span class="history-meta-cat" style="margin-left:8px;">${e.category}</span>
+                        </div>
+                        <button class="btn-delete" onclick='deleteFromCloud(${JSON.stringify(e)})'>Borrar</button>
+                    </div>
+                    <div class="history-meta-date" style="margin-top:6px;">${cleanDate} ${e.description ? '• ' + e.description : ''}</div>
+                </div>
+            `}).join('');
+            renderChart(data);
+        }
+
+        function renderChart(data) {
+            const ctx = document.getElementById('barChart').getContext('2d');
+            const months = [];
+            for (let i = 3; i >= 0; i--) {
+                const d = new Date(); d.setMonth(d.getMonth() - i);
+                months.push(d.toISOString().substring(0, 7));
+            }
+            const cats = [...new Set(data.map(e => e.category))];
+            const colors = ['#007AFF', '#28a745', '#fd7e14', '#dc3545', '#6f42c1', '#004085', '#e83e8c', '#6c757d'];
+            const ds = cats.map((c, idx) => ({
+                label: c,
+                data: months.map(m => data.filter(e => String(e.date).startsWith(m) && e.category === c).reduce((s, e) => s + Number(e.amount), 0)),
+                backgroundColor: colors[idx % colors.length],
+                borderRadius: 5
+            }));
+            
+            if(window.myChart) window.myChart.destroy();
+            window.myChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: months.map(m => m.split('-')[1] + '/' + m.split('-')[0].substring(2)), datasets: ds },
+                options: { 
+                    responsive: true, maintainAspectRatio: false, 
+                    scales: { 
+                        x: { stacked: true, grid: {display:false}, ticks: {color: '#1c1c1e', font: {size: 10, weight: 'bold'}} }, 
+                        y: { stacked: true, beginAtZero: true, ticks: {color: '#1c1c1e', font: {size: 10}} } 
+                    }, 
+                    plugins: { legend: { display: false } } 
+                }
+            });
+        }
+
+        function switchTab(t) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            document.getElementById('view-' + viewId).classList.add('active');
-            event.currentTarget.classList.add('active');
+            document.getElementById('view-' + t).classList.add('active');
+            document.getElementById('nav-' + t.substring(0,3)).classList.add('active');
+            if(t === 'reportes') fetchFromCloud();
         }
 
-        function saveExpense() {
-            const data = {
-                amt: document.getElementById('amount').value,
-                cat: document.getElementById('category').value,
-                desc: document.getElementById('description').value,
-                date: document.getElementById('dateInput').value
-            };
-            
-            if(!data.amt) return showStatus("Ingresa un monto");
-            
-            showStatus("🚀 Guardando...");
-            setTimeout(() => {
-                showStatus("✅ Guardado con éxito");
-                document.getElementById('amount').value = '';
-                document.getElementById('description').value = '';
-            }, 1000);
-        }
-
-        function showStatus(msg) {
+        function showStatus(m) {
             const s = document.getElementById('status');
-            s.innerText = msg;
-            s.style.display = 'block';
+            s.innerText = m; s.style.display = 'block';
             setTimeout(() => s.style.display = 'none', 3000);
         }
 
         function simulateOCR() {
-            showStatus("🔍 Analizando recibo...");
-            setTimeout(() => {
-                document.getElementById('amount').value = (Math.random() * 500 + 50).toFixed(2);
-                showStatus("✨ Datos extraídos");
-            }, 2000);
+            showStatus("Escaneando...");
+            setTimeout(() => { 
+                document.getElementById('amount').value = (Math.random()*150 + 20).toFixed(2); 
+                showStatus("✅ Detectado"); 
+            }, 1200);
         }
+        renderAll();
     </script>
 </body>
 </html>
