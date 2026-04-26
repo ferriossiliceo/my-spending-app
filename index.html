@@ -3,16 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GastoPro Premium</title>
+    <title>GastoPro Premium v12</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
             --primary: #007AFF; 
             --bg-gradient: linear-gradient(180deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
             --card: rgba(255, 255, 255, 0.1); 
+            --card-light: rgba(255, 255, 255, 0.18); /* Lighter for Reportes */
             --text: #FFFFFF; 
             --success: #34C759; 
             --deep-blue: #003366; 
+            --warning: #FFCC00; /* New Borrar color */
         }
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -27,20 +29,18 @@
             overflow: hidden; 
         }
 
-        /* View Container - Added padding for overlap fix */
         .view { 
             display: none; 
             height: calc(100vh - 85px); 
             overflow-y: auto; 
             padding: 20px; 
             padding-top: env(safe-area-inset-top); 
-            padding-bottom: 140px; /* Increased bottom padding to prevent overlap */
+            padding-bottom: 140px; 
             -webkit-overflow-scrolling: touch; 
         }
         
         .view.active { display: block; }
 
-        /* Modern Glassmorphism Cards */
         .card { 
             background: var(--card); 
             backdrop-filter: blur(15px);
@@ -51,21 +51,30 @@
             margin-bottom: 16px; 
         }
 
+        /* Lighter cards for data visibility */
+        .card-data { background: var(--card-light); border: 1px solid rgba(255,255,255,0.2); }
+
         h2 { margin-top: 10px; font-size: 1.6rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
         label { font-size: 0.7rem; color: #ced4da; font-weight: 600; text-transform: uppercase; display: block; margin: 12px 0 4px 4px; }
 
-        /* Thumb-Friendly Inputs */
         input, select, textarea { 
             width: 100%; 
-            padding: 14px; 
+            padding: 12px; 
             border-radius: 14px; 
             border: 1px solid rgba(255,255,255,0.2); 
             font-size: 16px; 
-            background: rgba(255,255,255,0.9); 
+            background: rgba(255,255,255,0.95); 
             color: #000;
             margin-bottom: 6px; 
             display: block; 
-            height: 52px; 
+            height: 48px; /* Standardized height */
+            appearance: none; -webkit-appearance: none;
+        }
+
+        /* Date specific fix for alignment */
+        input[type="date"] {
+            width: 100%;
+            font-family: inherit;
         }
 
         .send-container { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 10px; }
@@ -73,7 +82,7 @@
         .btn-send-icon { 
             background: var(--success); 
             color: white; 
-            width: 55px; height: 52px; 
+            width: 55px; height: 48px; 
             border-radius: 14px; 
             display: flex; align-items: center; justify-content: center; 
             font-size: 22px; flex-shrink: 0; cursor: pointer; 
@@ -82,33 +91,38 @@
         button { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 17px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; }
         button:active { opacity: 0.7; }
 
-        /* Deep Blue Action Button */
         .btn-camera { background: var(--deep-blue) !important; color: white !important; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        
-        /* Floating Button for external link */
         .btn-sheet { background: #1D6F42; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
 
-        .btn-delete { background: rgba(255, 59, 48, 0.2); color: #FF453A; width: auto; padding: 8px 16px; font-size: 12px; border-radius: 10px; border: none; }
+        /* New Vibrant Borrar Button */
+        .btn-delete { 
+            background: var(--warning); 
+            color: #000; 
+            width: auto; 
+            padding: 6px 14px; 
+            font-size: 11px; 
+            border-radius: 8px; 
+            font-weight: 800; 
+            text-transform: uppercase;
+        }
 
         .chart-wrapper { position: relative; height: 260px; width: 100%; }
 
-        /* List Styling */
         .history-item { 
-            background: rgba(255,255,255,0.08); 
+            background: rgba(255,255,255,0.15); /* Even lighter for rows */
             padding: 16px; 
             border-radius: 16px; 
             margin-bottom: 12px; 
-            border: 1px solid rgba(255,255,255,0.05); 
+            border: 1px solid rgba(255,255,255,0.1); 
         }
         
         .history-flex { display: flex; justify-content: space-between; align-items: center; }
-        .history-amount { font-weight: 700; font-size: 1.2rem; color: #fff; }
-        .history-meta { font-size: 0.85rem; color: #bfcace; }
+        .history-amount { font-weight: 800; font-size: 1.2rem; color: #fff; }
+        .history-meta { font-size: 0.85rem; color: #fff; font-weight: 500; }
 
-        /* Fixed Navigation */
         .nav-bar { 
             position: fixed; bottom: 0; width: 100%; height: 85px; 
-            background: rgba(0, 0, 0, 0.6); 
+            background: rgba(0, 0, 0, 0.7); 
             backdrop-filter: blur(25px); 
             -webkit-backdrop-filter: blur(25px);
             display: flex; border-top: 0.5px solid rgba(255,255,255,0.1); 
@@ -121,12 +135,11 @@
 
         #status { 
             position: fixed; top: 60px; left: 50%; transform: translateX(-50%); 
-            background: rgba(255,255,255,0.9); color: #000; 
-            padding: 10px 20px; border-radius: 25px; font-weight: 600;
-            font-size: 13px; z-index: 10000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            background: rgba(255,255,255,0.95); color: #000; 
+            padding: 10px 20px; border-radius: 25px; font-weight: 700;
+            font-size: 13px; z-index: 10000; display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
-        /* REVERSE LAYOUT FOR REGISTRO (Thumb friendly) */
         .bottom-ui { display: flex; flex-direction: column-reverse; }
     </style>
 </head>
@@ -134,27 +147,27 @@
     <div id="status"></div>
 
     <div id="view-registro" class="view active">
-        <div style="height: 20vh;"></div> <h2>Nuevo Gasto</h2>
+        <div style="height: 15vh;"></div> 
+        <h2>Nuevo Gasto</h2>
         <div class="card bottom-ui">
             <div>
                 <button class="btn-camera" onclick="document.getElementById('cameraInput').click()">📸 Escanear Recibo</button>
                 <input type="file" id="cameraInput" accept="image/*" capture="camera" style="display:none" onchange="simulateOCR()">
             </div>
-
             <div>
                 <label>Descripción</label>
-                <textarea id="description" rows="1" placeholder="Detalle opcional..."></textarea>
+                <textarea id="description" rows="1" placeholder="Detalle opcional..." style="height: auto; min-height: 48px;"></textarea>
                 
                 <label>Fecha</label>
                 <input type="date" id="dateInput">
 
                 <label>Categoría</label>
                 <select id="category">
-                    <option>Pelo</option><option>Comida</option><option>Regalo</option><option>Auto</option>
-                    <option>Ropa</option><option>Super</option><option>Entretenimiento</option><option>Salud</option>
-                    <option>Depa</option><option>Gasolina</option><option>Tienda de conveniencia</option><option>Viajes</option>
-                    <option>Deporte</option><option>Fiesta</option><option>Taxi</option><option>Vuelo</option>
-                    <option>Tintorería</option><option>Hipoteca</option><option>Compras varias</option>
+                    <option>Comida</option><option>Super</option><option>Gasolina</option><option>Hipoteca</option>
+                    <option>Gym</option><option>Entretenimiento</option><option>Tienda de conveniencia</option>
+                    <option>Depa</option><option>Compras varias</option><option>Salud</option><option>Deporte</option>
+                    <option>Taxi</option><option>Vuelo</option><option>Viajes</option><option>Pelo</option>
+                    <option>Ropa</option><option>Auto</option><option>Regalo</option><option>Tintorería</option>
                 </select>
 
                 <label>Monto ($)</label>
@@ -171,7 +184,7 @@
             <h2>Reportes</h2>
             <button onclick="fetchFromCloud()" style="width:auto; padding:8px 16px; font-size:12px; background:rgba(255,255,255,0.2); color:white; border-radius: 10px;">🔄 Sync</button>
         </div>
-        <div class="card">
+        <div class="card card-data">
             <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
         </div>
         <div id="historyList"></div>
@@ -179,8 +192,8 @@
 
     <div id="view-settings" class="view">
         <h2>Planilla</h2>
-        <div class="card">
-            <p style="font-size: 0.9rem; color: #ced4da; margin-bottom: 20px;">Accede a tu base de datos completa en Google Sheets para ediciones manuales o análisis detallado.</p>
+        <div class="card card-data">
+            <p style="font-size: 0.9rem; color: #fff; margin-bottom: 20px;">Accede a tu base de datos completa en Google Sheets.</p>
             <button class="btn-sheet" onclick="openSheet()">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/Google_Sheets_logo_%282014-2020%29.svg" width="20">
                 Abrir Google Sheet
@@ -200,9 +213,7 @@
         
         document.getElementById('dateInput').valueAsDate = new Date();
         
-        function openSheet() {
-            window.open(SHEET_URL, '_blank');
-        }
+        function openSheet() { window.open(SHEET_URL, '_blank'); }
 
         async function saveExpense() {
             const amtField = document.getElementById('amount');
@@ -221,9 +232,7 @@
                 document.getElementById('description').value = "";
                 showStatus("✅ Guardado");
                 setTimeout(() => switchTab('reportes'), 500);
-            } catch (err) {
-                showStatus("❌ Error");
-            }
+            } catch (err) { showStatus("❌ Error"); }
         }
 
         async function fetchFromCloud() {
@@ -234,21 +243,17 @@
                 localStorage.setItem('expenses', JSON.stringify(data));
                 renderAll();
                 showStatus("✅ Sincronizado");
-            } catch (err) {
-                showStatus("❌ Error");
-            }
+            } catch (err) { showStatus("❌ Error"); }
         }
 
         async function deleteFromCloud(item) {
-            if(!confirm("¿Borrar?")) return;
+            if(!confirm("¿Borrar registro?")) return;
             showStatus("Borrando...");
             const payload = { action: "delete", rowId: item.rowId };
             try {
                 await fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
-                setTimeout(fetchFromCloud, 2500); 
-            } catch (err) {
-                showStatus("❌ Error");
-            }
+                setTimeout(fetchFromCloud, 2000); 
+            } catch (err) { showStatus("❌ Error"); }
         }
 
         function renderAll() {
@@ -263,11 +268,11 @@
                     <div class="history-flex">
                         <div>
                             <span class="history-amount">$${Number(e.amount).toFixed(2)}</span>
-                            <span class="history-meta" style="color:var(--primary); font-weight:700; margin-left:8px;">${e.category}</span>
+                            <span class="history-meta" style="color:#81d4fa; margin-left:8px;">${e.category}</span>
                         </div>
                         <button class="btn-delete" onclick='deleteFromCloud(${JSON.stringify(e)})'>Borrar</button>
                     </div>
-                    <div class="history-meta" style="margin-top:6px; opacity: 0.8;">${cleanDate} ${e.description ? '• ' + e.description : ''}</div>
+                    <div class="history-meta" style="margin-top:6px; opacity: 0.9;">${cleanDate} ${e.description ? '• ' + e.description : ''}</div>
                 </div>
             `}).join('');
             renderChart(data);
@@ -281,7 +286,7 @@
                 months.push(d.toISOString().substring(0, 7));
             }
             const cats = [...new Set(data.map(e => e.category))];
-            const colors = ['#007AFF', '#34C759', '#FF9500', '#FF3B30', '#AF52DE', '#5856D6', '#FFCC00', '#8E8E93'];
+            const colors = ['#81d4fa', '#a5d6a7', '#ffcc80', '#ef9a9a', '#ce93d8', '#9fa8da', '#fff59d', '#b0bec5'];
             const ds = cats.map((c, idx) => ({
                 label: c,
                 data: months.map(m => data.filter(e => String(e.date).startsWith(m) && e.category === c).reduce((s, e) => s + Number(e.amount), 0)),
@@ -294,11 +299,10 @@
                 type: 'bar',
                 data: { labels: months.map(m => m.split('-')[1] + '/' + m.split('-')[0].substring(2)), datasets: ds },
                 options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false, 
+                    responsive: true, maintainAspectRatio: false, 
                     scales: { 
-                        x: { stacked: true, grid: {display:false}, ticks: {color: '#fff'} }, 
-                        y: { stacked: true, beginAtZero: true, ticks: {color: '#fff'} } 
+                        x: { stacked: true, grid: {display:false}, ticks: {color: '#fff', font: {size: 10}} }, 
+                        y: { stacked: true, beginAtZero: true, ticks: {color: '#fff', font: {size: 10}} } 
                     }, 
                     plugins: { legend: { display: false } } 
                 }
@@ -309,10 +313,7 @@
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
             document.getElementById('view-' + t).classList.add('active');
-            
-            const navId = t.substring(0,3);
-            document.getElementById('nav-' + navId).classList.add('active');
-            
+            document.getElementById('nav-' + t.substring(0,3)).classList.add('active');
             if(t === 'reportes') fetchFromCloud();
         }
 
