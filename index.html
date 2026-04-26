@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GastoPro Premium v14</title>
+    <title>GastoPro Premium v15</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { 
             --primary: #007AFF; 
             --bg-gradient: linear-gradient(180deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
             --card: rgba(255, 255, 255, 0.1); 
-            --marfil-light: rgba(255, 253, 240, 0.65); /* Lighter, more translucent marfil */
+            --frost-white: rgba(252, 252, 252, 0.88); /* Almost White Tone */
             --text-dark: #1c1c1e;
             --text-light: #FFFFFF; 
             --success: #34C759; 
             --deep-blue: #003366; 
-            --warning-yellow: #FFCC00; /* Reverted to your preferred Yellow */
+            --warning-yellow: #FFCC00; 
         }
         
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -52,10 +52,10 @@
             margin-bottom: 16px; 
         }
 
-        /* Lighter Marfil Tone */
-        .card-marfil { 
-            background: var(--marfil-light); 
-            border: 1px solid rgba(255,255,255,0.4); 
+        /* Almost White Tone for Reports/Sheets */
+        .card-white { 
+            background: var(--frost-white); 
+            border: 1px solid rgba(255,255,255,0.5); 
             color: var(--text-dark);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
@@ -70,7 +70,7 @@
             border-radius: 14px; 
             border: 1px solid rgba(255,255,255,0.2); 
             font-size: 16px; 
-            background: rgba(255,255,255,0.98); 
+            background: rgba(255,255,255,1); 
             color: #000;
             margin-bottom: 6px; 
             display: block; 
@@ -94,7 +94,6 @@
         .btn-camera { background: var(--deep-blue) !important; color: white !important; margin-top: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .btn-sheet { background: #1D6F42; color: white; display: flex; align-items: center; justify-content: center; gap: 10px; }
 
-        /* Yellow Borrar Button */
         .btn-delete { 
             background: var(--warning-yellow); 
             color: #000; 
@@ -104,18 +103,18 @@
             border-radius: 8px; 
             font-weight: 800; 
             text-transform: uppercase;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .chart-wrapper { position: relative; height: 260px; width: 100%; }
 
         .history-item { 
-            background: rgba(255, 255, 255, 0.5); /* Much lighter and transparent */
+            background: rgba(255, 255, 255, 0.7); 
             padding: 16px; 
             border-radius: 16px; 
             margin-bottom: 12px; 
-            border: 1px solid rgba(255, 255, 255, 0.2); 
+            border: 1px solid rgba(255, 255, 255, 0.3); 
             color: var(--text-dark);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
         
         .history-flex { display: flex; justify-content: space-between; align-items: center; }
@@ -125,7 +124,7 @@
 
         .nav-bar { 
             position: fixed; bottom: 0; width: 100%; height: 85px; 
-            background: rgba(0, 0, 0, 0.85); 
+            background: rgba(0, 0, 0, 0.88); 
             backdrop-filter: blur(25px); 
             -webkit-backdrop-filter: blur(25px);
             display: flex; border-top: 0.5px solid rgba(255,255,255,0.1); 
@@ -187,7 +186,7 @@
             <h2>Reportes</h2>
             <button onclick="fetchFromCloud()" style="width:auto; padding:8px 16px; font-size:12px; background:rgba(255,255,255,0.2); color:white; border-radius: 10px;">🔄 Sync</button>
         </div>
-        <div class="card card-marfil">
+        <div class="card card-white">
             <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
         </div>
         <div id="historyList"></div>
@@ -195,7 +194,7 @@
 
     <div id="view-settings" class="view">
         <h2>Planilla</h2>
-        <div class="card card-marfil">
+        <div class="card card-white">
             <p style="font-size: 0.9rem; color: var(--text-dark); margin-bottom: 20px;">Accede a tu base de datos completa en Google Sheets.</p>
             <button class="btn-sheet" onclick="openSheet()">
                 <img src="https://upload.wikimedia.org/wikipedia/commons/3/30/Google_Sheets_logo_%282014-2020%29.svg" width="20">
